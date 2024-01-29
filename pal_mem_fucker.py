@@ -44,14 +44,14 @@ def restart_pal(service_name='pal-server'):
         print(f"错误: 无法重启服务 {service_name}. 错误信息: {e}")
 
 
-def check_pal(passwd, restart_mem=80., port=25575):
+def check_pal(passwd, restart_mem=80., restart_wait=10, port=25575):
     mem_usage = get_mem_usage()
     if mem_usage > restart_mem:
         with ClientFix('127.0.0.1', port, passwd=passwd) as client:
             print(f'memory overflow: {mem_usage:.2f}%')
             client.run('Save')
-            client.run(f"Server memory usage is above {mem_usage:.2f}%, restart in 10 seconds.")
-            time.sleep(10)
+            client.run(f"Server memory usage is above {mem_usage:.2f}%, restart in {restart_wait} seconds.")
+            time.sleep(restart_wait)
             restart_pal()
 
 
@@ -60,8 +60,9 @@ if __name__ == "__main__":
     parser.add_argument("--interval", type=int, default=10 * 60)
     parser.add_argument("--passwd", type=str, default=None, required=True)
     parser.add_argument("--restart_mem", type=float, default=80.)
+    parser.add_argument("--restart_wait", type=int, default=10, help="How many seconds to wait before restarting")
     args = parser.parse_args()
 
     while True:
-        check_pal(args.passwd, restart_mem=args.restart_mem)
+        check_pal(args.passwd, restart_mem=args.restart_mem, restart_wait=args.restart_wait)
         time.sleep(args.interval)
